@@ -4,6 +4,14 @@ from PIL import Image
 from transformers import AutoProcessor, AutoModel
 import threading
 
+from src.config import get_settings
+from src.device import select_device
+
+def _features(output):
+    """transformers 4.x returns a tensor, 5.x returns a model output holding it in pooler_output."""
+    return output if isinstance(output, torch.Tensor) else output.pooler_output
+
+
 class ModelLoader:
     _instance = None
     _lock = threading.Lock()
@@ -18,27 +26,10 @@ class ModelLoader:
 
     def _initialize(self):
         """Initialize the model and processor."""
-        self.device = "cpu"
-        if torch.backends.mps.is_available():
-            self.device = "mps"
-        elif torch.cuda.is_available():
-            self.device = "cuda"
-            
-        print(f"Selected device: {self.device}")
-        
-        if self.device == "cpu":
-            print("--- Device Diagnostic ---")
-            print(f"Torch version: {torch.__version__}")
-            print(f"MPS available: {torch.backends.mps.is_available()}")
-            print(f"MPS built: {torch.backends.mps.is_built()}")
-            import platform
-            print(f"Platform: {platform.platform()}")
-            print(f"Processor: {platform.processor()}")
-            print("-------------------------")
-            
+        self.device = select_device()
+        model_name = get_settings().embedding_model
         print(f"Loading SigLIP model on {self.device}...")
-        model_name = "google/siglip-so400m-patch14-384"
-        
+
         self.model = AutoModel.from_pretrained(model_name, use_safetensors=True).to(self.device)
         self.processor = AutoProcessor.from_pretrained(model_name, use_fast=True)
         print("Model loaded successfully.")
@@ -58,7 +49,7 @@ class ModelLoader:
             inputs = self.processor(images=image, return_tensors="pt").to(self.device)
             
             with torch.no_grad():
-                image_features = self.model.get_image_features(**inputs)
+                image_features = _features(self.model.get_image_features(**inputs))
                 
             # Normalize the features
             image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
@@ -81,7 +72,7 @@ class ModelLoader:
             inputs = self.processor(text=[text], return_tensors="pt", padding="max_length").to(self.device)
             
             with torch.no_grad():
-                text_features = self.model.get_text_features(**inputs)
+                text_features = _features(self.model.get_text_features(**inputs))
                 
             # Normalize the features
             text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
