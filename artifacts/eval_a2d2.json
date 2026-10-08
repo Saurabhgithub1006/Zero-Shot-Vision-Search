@@ -1,0 +1,78 @@
+{
+  "images": 1978,
+  "k": 10,
+  "queries": [
+    {
+      "query": "a cyclist riding on the road",
+      "target_class": "Bicycle",
+      "precision@10": 0.9,
+      "base_rate": 0.1678463094034378
+    },
+    {
+      "query": "pedestrians walking near the street",
+      "target_class": "Pedestrian",
+      "precision@10": 1.0,
+      "base_rate": 0.18503538928210314
+    },
+    {
+      "query": "a truck on the road ahead",
+      "target_class": "Truck",
+      "precision@10": 1.0,
+      "base_rate": 0.531850353892821
+    },
+    {
+      "query": "a traffic light at an intersection",
+      "target_class": "Traffic signal",
+      "precision@10": 1.0,
+      "base_rate": 0.19059656218402427
+    },
+    {
+      "query": "a road sign next to the street",
+      "target_class": "Traffic sign",
+      "precision@10": 1.0,
+      "base_rate": 0.576845298281092
+    },
+    {
+      "query": "a zebra crossing on the road",
+      "target_class": "Zebra crossing",
+      "precision@10": 0.3,
+      "base_rate": 0.005561172901921132
+    },
+    {
+      "query": "a van or utility vehicle on the road",
+      "target_class": "Utility vehicle",
+      "precision@10": 0.0,
+      "base_rate": 0.04853387259858443
+    },
+    {
+      "query": "a motorcycle or scooter on the road",
+      "target_class": "Small vehicles",
+      "precision@10": 0.7,
+      "base_rate": 0.03538928210313448
+    },
+    {
+      "query": "a road with a cobblestone surface",
+      "target_class": "Drivable cobblestone",
+      "precision@10": 1.0,
+      "base_rate": 0.390798786653185
+    },
+    {
+      "query": "a road with dashed lane markings",
+      "target_class": "Dashed line",
+      "precision@10": 0.9,
+      "base_rate": 0.8276036400404448
+    },
+    {
+      "query": "cars parked in a parking area",
+      "target_class": "Parking area",
+      "precision@10": 0.8,
+      "base_rate": 0.14762386248736098
+    },
+    {
+      "query": "traffic cones or barriers guiding cars",
+      "target_class": "Traffic guide obj.",
+      "precision@10": 0.9,
+      "base_rate": 0.08139534883720931
+    }
+  ]
+}

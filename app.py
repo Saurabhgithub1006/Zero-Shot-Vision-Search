@@ -9,14 +9,12 @@ load_dotenv()
 # Add the project root to sys.path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from src.model_loader import ModelLoader
-from src.vector_indexer import Indexer
-from src.ranker import Ranker
+from src.search import build_search_service
 
 # Page Config
 st.set_page_config(
-    page_title="Vision Scout",
-    page_icon="🔍",
+    page_title="Driving Scenario Search",
+    page_icon="🚗",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -45,91 +43,70 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 @st.cache_resource
-def load_components():
-    return ModelLoader(), Indexer(), Ranker()
+def load_service():
+    return build_search_service()
+
+
+EXAMPLES = {
+    "a2d2": "e.g., 'a cyclist next to parked cars' or 'a truck on a country road'",
+    "unsplash": "e.g., 'a futuristic city at night' or 'a happy dog running'",
+}
+
+ATTRIBUTION = {
+    "a2d2": "Images: A2D2 – Audi Autonomous Driving Dataset, © Audi AG, "
+            "licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/). "
+            "Images are shown unmodified.",
+    "unsplash": "Images: Unsplash Lite dataset.",
+}
+
 
 def main():
-    st.title("🔍 Vision Scout")
-    st.markdown("### Zero-Shot Semantic Image Search")
-    
-    # Load components
+    st.title("🚗 Driving Scenario Search")
+    st.markdown("### Zero-Shot Semantic Search over German Road Scenes")
+
     try:
-        model_loader, indexer, ranker = load_components()
+        service = load_service()
     except Exception as e:
         st.error(f"Error loading components: {e}")
         st.stop()
-        
-    # Load descriptions for re-ranking
-    @st.cache_resource
-    def load_descriptions():
-        csv_path = os.path.join(os.path.dirname(__file__), 'assets/unsplash-research-dataset-lite-latest/photos.csv000')
-        desc_map = {}
-        if os.path.exists(csv_path):
-            import csv
-            try:
-                with open(csv_path, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f, delimiter='\t')
-                    for row in reader:
-                        desc = row.get('ai_description') or row.get('photo_description')
-                        if desc:
-                            desc_map[row['photo_id']] = desc
-            except Exception as e:
-                st.error(f"Error loading descriptions: {e}")
-        return desc_map
 
-    desc_map = load_descriptions()
-        
-    # Search Bar
-    query = st.text_input("Describe what you're looking for...", placeholder="e.g., 'a futuristic city at night' or 'a happy dog running'")
-    
+    dataset = service.dataset
+    query = st.text_input("Describe the driving scenario you're looking for...",
+                          placeholder=EXAMPLES.get(dataset.name, ""))
+
+    # Ground-truth classes from the label masks can narrow the search
+    selected_labels = []
+    if dataset.has_labels:
+        all_labels = sorted({l for r in service.records.values() for l in r.labels})
+        selected_labels = st.multiselect("Must contain (optional)", all_labels)
+
     if query:
         with st.spinner("Searching..."):
-            # Generate text embedding
-            text_embedding = model_loader.get_text_embedding(query)
-            
-            if text_embedding:
-                # Search Pinecone (Fetch top 50 for re-ranking)
-                results = indexer.search(text_embedding, top_k=50)
-                
-                if results and results['matches']:
-                    # Prepare candidates for re-ranking
-                    candidates = []
-                    for match in results['matches']:
-                        filename = match['metadata'].get('filename', '')
-                        pid = os.path.splitext(filename)[0]
-                        description = desc_map.get(pid, "")
-                        
-                        candidates.append({
-                            'id': match['id'],
-                            'text': description,
-                            'metadata': match['metadata'],
-                            'original_score': match['score']
-                        })
-                    
-                    # Re-rank
-                    ranked_results = ranker.rank(query, candidates, top_k=12)
-                    
-                    st.markdown(f"Found **{len(ranked_results)}** matches for *'{query}'* (Re-ranked from top 50)")
-                    
-                    # Display results in a grid
-                    cols = st.columns(3)
-                    for idx, match in enumerate(ranked_results):
-                        meta = match['metadata']
-                        score = match['score']
-                        
-                        # Resolve image path
-                        img_path = os.path.join(os.path.dirname(__file__), meta['path'])
-                        
-                        with cols[idx % 3]:
-                            if os.path.exists(img_path):
-                                image = Image.open(img_path)
-                                st.image(image, width="stretch", caption=f"Score: {score:.2f}")
-                            else:
-                                st.warning(f"Image not found: {meta['path']}")
-                else:
-                    st.info("No matches found.")
-            else:
-                st.error("Failed to generate embedding for query.")
+            try:
+                results = service.search(query, top_k=12, labels=selected_labels)
+            except Exception as e:
+                st.error(f"Search failed: {e}")
+                st.stop()
+
+        if not results:
+            st.info("No matches found.")
+        else:
+            note = f" (re-ranked from top {service.candidate_k})" if service.ranker else ""
+            st.markdown(f"Found **{len(results)}** matches for *'{query}'*{note}")
+
+            cols = st.columns(3)
+            for idx, result in enumerate(results):
+                img_path = os.path.join(os.path.dirname(__file__), result.path)
+                with cols[idx % 3]:
+                    if os.path.exists(img_path):
+                        st.image(Image.open(img_path), width="stretch", caption=f"Score: {result.score:.3f}")
+                        if result.labels:
+                            st.caption(", ".join(result.labels))
+                    else:
+                        st.warning(f"Image not found: {result.path}")
+
+    st.markdown("---")
+    st.caption(ATTRIBUTION.get(dataset.name, ""))
 
 if __name__ == "__main__":
     main()
