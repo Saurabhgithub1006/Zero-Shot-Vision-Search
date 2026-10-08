@@ -3,6 +3,11 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 import argparse
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.datasets.unsplash import CSV_PATH, IMAGE_DIR
 
 def download_images(csv_path, output_dir, limit=10000, start_index=0):
     """
@@ -72,8 +77,8 @@ def download_images(csv_path, output_dir, limit=10000, start_index=0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download images from Unsplash Lite dataset.")
-    parser.add_argument("--csv", type=str, default="assets/unsplash-research-dataset-lite-latest/photos.csv000", help="Path to the photos CSV file.")
-    parser.add_argument("--output", type=str, default="assets/image-dataset", help="Directory to save images.")
+    parser.add_argument("--csv", type=str, default=CSV_PATH, help="Path to the photos CSV file.")
+    parser.add_argument("--output", type=str, default=IMAGE_DIR, help="Directory to save images.")
     
     # Temporary defaults downloads the next n images  as requested by user
     #hardcoded for now as I have already donwloaded 11000 images and might want to download next n images to add more dataset.
