@@ -1,138 +1,124 @@
-## zero-shot-vison-search
+# Zero-Shot Driving Scenario Search
 
-Zero-Shot Vision Search is a Semantic/Vector Image Search Engine project, a part of my learning and building series in Multi-modal LLM or Vision RAG, that aims to classify anything (Zero-Shot) just by checking if the image vector is semantically close to the text vector. 
+Find safety-critical driving scenarios in automotive camera data by describing them in plain language — no labelling, no retraining.
 
-## Introduction
+> *"a cyclist next to parked cars"* → the matching frames from Audi's test drives on German roads, ranked by relevance.
 
-Zero-Shot Vision Search is a semantic image retrieval engine capable of finding and classifying images based on natural language queries, without any explicit training on the target classes.
+## The problem
 
-Unlike traditional image classifiers (ResNet, EfficientNet) that are limited to fixed categories (e.g., "1000 ImageNet classes"), this project leverages Multimodal Contrastive Learning to align visual and textual representations in a shared vector space. This allows the system to recognize any concept describable in language—from "a cyber-punk street at night" to "a happy golden retriever puppy."
+Automotive OEMs and suppliers record enormous volumes of fleet and test-drive camera data. Validating driver-assistance and automated-driving functions (e.g. for ISO 21448 / SOTIF scenario coverage) requires finding the rare situations hidden in that data: a cyclist between parked cars, a zebra crossing with pedestrians, a tractor on a country road. Manually tagging every frame is slow and expensive, and fixed-class detectors only find what they were trained for.
 
-This implementation utilizes Google's SigLIP (Sigmoid Loss for Language Image Pre-training), specifically the siglip-so400m-patch14-384 checkpoint, on the Unsplash Lite dataset. SigLIP represents the 2025 state-of-the-art standard for vision encoding, outperforming OpenAI's vanilla CLIP in zero-shot accuracy and computational efficiency by decoupling image-text pairing into independent binary classification tasks.
+This project searches the data **zero-shot**: a vision-language model (SigLIP) embeds images and text into the same vector space, so any scenario that can be described in words can be searched, without training on it.
 
+## Dataset
 
-## Objectives
+[A2D2 – Audi Autonomous Driving Dataset](https://a2d2-dataset.github.io), recorded by Audi on roads in southern Germany (city, rural roads, Autobahn).
 
-- Build a Zero-Shot Engine: Create a pipeline that accepts raw text and returns semantically relevant images with high precision.
+- Front-center camera frames from all 23 annotated scenes (~2,000 frames, sampled evenly per scene)
+- Pixel-level semantic labels are used as **ground truth** for evaluation and as optional search filters
+- Downloaded directly from the official public AWS Open Data bucket (no account required)
 
-- Demonstrate SigLIP Superiority: Utilize the Shape-Optimized (so400m) SigLIP model to showcase improved handling of edge cases compared to softmax-based CLIP models.
+**License:** A2D2 © Audi AG, licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/). Images are never committed to this repository and are displayed unmodified with attribution.
 
-- Scalable Vector Search: Implement a retrieval architecture that can scan the Unsplash Lite dataset (25k+ high-quality images) in milliseconds.
-
-
-## Dataset Setup
-
-1.  **Download**: Go to [Unsplash Lite Dataset](https://unsplash.com/data/lite/latest) and download the dataset.
-2.  **Extract**: Extract the images into the `assets/` directory.
-    *   Note: The Unsplash Lite dataset provides URLs. It will need a script to download the actual images. For that, this project provides a script `download_images.py`.
-
-## System Architecture
+## Architecture
 
 ```mermaid
 graph TD
-    User[User] -->|Text Query/Prompt| Frontend[Streamlit App]
-    
-    subgraph "Core Logic"
-        Frontend -->|Get Embedding| Model[Model Loader - SigLIP]
-        Frontend -->|Search| Indexer[Indexer - Pinecone Client]
+    subgraph Offline
+        DL[scripts/download_a2d2.py] -->|frames + label masks| DATA[assets/a2d2 + manifest.csv]
+        DATA --> ING[scripts/ingest_and_index.py]
+        ING -->|SigLIP image embeddings 1152-d| PC[(Pinecone · namespace per dataset)]
     end
-    
-    subgraph "Data Pipeline"
-        Script[ingest_and_index.py] -->|Load Images| Assets[assets/image-dataset]
-        Script -->|Generate Embeddings| Model
-        Script -->|Upsert Vectors| DB[(Pinecone Vector DB)]
+    subgraph Online
+        U[Engineer] --> APP[Streamlit app.py]
+        T[Other tools] --> API[FastAPI api.py]
+        APP --> SVC[src/search.py SearchService]
+        API --> SVC
+        SVC -->|text embedding| M[SigLIP so400m]
+        SVC -->|top-k + label filter| PC
     end
-    
-    Indexer -->|Query| DB
-
-    DB -->|Results| Indexer
-    Indexer -->|Top-K Matches| Frontend
-    Frontend[Streamlit App] -->| View Images| User[User]
-    Assets -.->|Read Image File| Frontend
+    subgraph Evaluation
+        EV[scripts/evaluate_model.py] --> SVC
+        EV -->|Precision@10 vs label ground truth| R[results]
+    end
 ```
 
-## Methodology
+| Module | Responsibility |
+|---|---|
+| `src/config.py` | Central settings (dataset, index, model ids); secrets only from the environment |
+| `src/datasets/` | Dataset adapters (`a2d2`, `unsplash`) exposing images, captions and labels uniformly |
+| `src/model_loader.py` | SigLIP image/text embeddings on CUDA / MPS / CPU |
+| `src/vector_indexer.py` | Pinecone index with one namespace per dataset |
+| `src/search.py` | Shared search pipeline used by the app, the API and evaluation |
+| `src/evaluation.py` | Retrieval metrics and the scenario query set |
+| `api.py` | REST API |
+| `app.py` | Streamlit UI |
 
-The Zero-Shot Vision Search pipeline consists of the following key steps:
+## Evaluation
 
-1. **Image Collection & Preparation**
-   - Download the Unsplash Lite dataset and extract images into the `assets/image-dataset/` directory.
-   - Use the provided `download_images.py` script to automate image downloading if needed.
-   - Store image metadata (e.g., URLs, captions, IDs) in `data/metadata.json` for efficient lookup.
+Each scenario query is graded against A2D2's human-annotated label masks: a result counts as relevant when the target class is visible in that frame. **Precision@10** is compared with the **base rate** — the share of all frames containing the class, i.e. what random retrieval would score.
 
-2. **Embedding Generation**
-   - Use the SigLIP (siglip-so400m-patch14-384) model to encode both images and text queries into a shared vector space.
-   - For each image, generate a fixed-length embedding vector and store it for indexing.
-   - Text queries from users are also converted into embedding vectors using the same model, ensuring semantic alignment.
+Results on 1,978 frames (`scripts/evaluate_model.py`, report in `artifacts/eval_a2d2.json`):
 
-3. **Vector Indexing**
-   - Utilize Pinecone (or a similar vector database) to index all image embeddings.
-   - The `ingest_and_index.py` script handles batch upserting of image vectors into the database.
-   - The index supports efficient similarity search (e.g., cosine or dot-product) for large-scale datasets.
+| Scenario query | Target class | Precision@10 | Base rate | Lift |
+|---|---|---:|---:|---:|
+| a cyclist riding on the road | Bicycle | 0.90 | 0.17 | 5.4× |
+| pedestrians walking near the street | Pedestrian | 1.00 | 0.19 | 5.4× |
+| a truck on the road ahead | Truck | 1.00 | 0.53 | 1.9× |
+| a traffic light at an intersection | Traffic signal | 1.00 | 0.19 | 5.2× |
+| a road sign next to the street | Traffic sign | 1.00 | 0.58 | 1.7× |
+| a zebra crossing on the road | Zebra crossing | 0.30 | 0.01 | 54× |
+| a van or utility vehicle on the road | Utility vehicle | 0.00 | 0.05 | 0× |
+| a motorcycle or scooter on the road | Small vehicles | 0.70 | 0.04 | 20× |
+| a road with a cobblestone surface | Drivable cobblestone | 1.00 | 0.39 | 2.6× |
+| a road with dashed lane markings | Dashed line | 0.90 | 0.83 | 1.1× |
+| cars parked in a parking area | Parking area | 0.80 | 0.15 | 5.4× |
+| traffic cones or barriers guiding cars | Traffic guide obj. | 0.90 | 0.08 | 11× |
+| **Mean** | | **0.79** | **0.27** | |
 
+**Observations**
+- Rare, safety-relevant scenarios benefit most: zebra crossings occur in 11 of 1,978 frames (0.6 %), and 3 of them appear in the top 10.
+- Utility vehicles fail (0.00): the top 10 are frames with cars (9) and trucks (4), so the model finds vehicles but not this specific class. Hypothesis: the query wording doesn't match how SigLIP represents A2D2's "Utility vehicle" class; not yet verified. Combining the text query with the label filter (`labels: ["Utility vehicle"]`) returns 10 correct frames as a workaround.
+- No re-ranking is applied for A2D2 because the dataset has no captions; the cross-encoder re-ranker is used automatically for captioned datasets (Unsplash).
 
-## 4. Semantic Search & Ranking
+## Setup
 
-- When a user submits a text query, the system computes its embedding and queries the vector database for the most similar image vectors.
-- The `ranker.py` module retrieves the top-K matches based on similarity scores.
-- Results are re-ranked using the `cross-encoder/ms-marco-MiniLM-L-6-v2` model to improve relevance (e.g., using additional metadata or heuristics).
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # Windows  (source .venv/bin/activate on Linux/macOS)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128   # GPU build
+pip install -r requirements.txt
+copy .env.example .env            # then add your PINECONE_API_KEY to .env
+```
 
-### Mathematical Concept
+## Usage
 
-```markdown
-Both images and text queries are encoded as high-dimensional vectors (embeddings) in $\mathbb{R}^n$ using the SigLIP model:
+```bash
+python scripts/download_a2d2.py --total 2000    # ~6 GB, resumable
+python scripts/ingest_and_index.py              # embed + upsert (skips already indexed images)
+python scripts/evaluate_model.py --output artifacts/eval_a2d2.json
 
-- $v_{image} \in \mathbb{R}^n$
-- $v_{text} \in \mathbb{R}^n$
+streamlit run app.py                            # UI
+uvicorn api:app --port 8000                     # REST API, docs at http://localhost:8000/docs
+pytest                                          # tests
+```
 
-Semantic similarity between a query and an image is computed using cosine similarity:
+### REST API
 
-$$
-\mathrm{sim}(v_{text}, v_{image})
-= \frac{v_{text} \cdot v_{image}}{\|v_{text}\| \, \|v_{image}\|}
-$$
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Status, active dataset and image count |
+| GET | `/labels` | Ground-truth classes available for filtering |
+| POST | `/search` | `{"query": "...", "top_k": 12, "labels": ["Bicycle"]}` → ranked results |
+| GET | `/images/{id}` | Image file for a result |
 
-Alternatively, dot-product similarity can be used:
+```bash
+curl -X POST http://localhost:8000/search -H "Content-Type: application/json" \
+     -d '{"query": "a cyclist next to parked cars", "top_k": 5}'
+```
 
-$$
-\mathrm{sim}(v_{text}, v_{image}) = v_{text} \cdot v_{image}
-$$
+## Credits
 
-For top-K retrieval, similarity scores are computed between the query vector and each image vector:
-
-$$
-s_j = \mathrm{sim}(v_{text}, v_{image_j}), \quad j = 1, \dots, N
-$$
-
-The top-K images are then selected as:
-
-$$
-\text{Top-K} = \operatorname{argsort}_K(s_j)
-$$
-
-```markdown
-
-5. **Frontend Visualization**
-   - The Streamlit app provides an interactive interface for users to enter queries and view results.
-   - Top-K matching images are displayed along with their metadata.
-   - The app reads image files directly from the `assets/image-dataset/` directory for fast rendering.
-
-6. **Zero-Shot Capability**
-   - The system does not require retraining for new concepts; any text prompt can be used to search for semantically relevant images.
-   - This is enabled by the contrastive learning approach of SigLIP, which aligns visual and textual modalities in a unified space.
-
-
-## Model Evaluation Metrics
-Below are the metrics for the model evaluation on Unsplash Lite dataset(15k images):
-
-![Zero-Shot Vision Search Metrics](assets/model_eval_metrics.png)
-
-
-
-## Results
-
-The following image demonstrates the effectiveness of the Zero-Shot Vision Search engine that this project was able to achieve in retrieving semantically relevant images for a given text query:
-
-![Zero-Shot Vision Search Result](assets/zero-shot-vision-search-result.png)
-
-*Figure: Result of top-K image retrieval results for a natural language query using the SigLIP-powered search engine.*
+- Based on [Tekraj15/zero-shot-vision-search](https://github.com/Tekraj15/zero-shot-vision-search) (original Unsplash-based implementation).
+- Dataset: A2D2 © Audi AG, CC BY-ND 4.0 — Geyer et al., *A2D2: Audi Autonomous Driving Dataset*, arXiv:2004.06320.
+- Model: [google/siglip-so400m-patch14-384](https://huggingface.co/google/siglip-so400m-patch14-384).

@@ -3,7 +3,7 @@
 **Project:** Zero-Shot Vision Search, retargeted to a new dataset
 **Repo:** `origin` → github.com/Saurabhgithub1006/Zero-Shot-Vision-Search · `upstream` → github.com/Tekraj15/zero-shot-vision-search
 **Created:** 2026-10-04
-**Status:** Proposal. No code has been changed. Each phase starts only after its plan is approved.
+**Status:** Phases 0–7 implemented and validated on 2026-10-08 (see section 8). Dataset: **A2D2** (Audi, CC BY-ND 4.0).
 
 ---
 
@@ -68,6 +68,7 @@ graph TD
 | E7 | `app.py:61-75`, `scripts/evaluate_model.py:48-63` | Caption loading is implemented twice | [read] |
 | E8 | `src/ranker.py:38`, `app.py:101` | If an image has no caption, the cross-encoder compares the query to `""`. Re-ranking then becomes meaningless and can push *good* vector matches down | [read] → HYPOTHESIS until measured in Phase 5 |
 | E9 | `README.md` | Refers to `assets/model_eval_metrics.png`, which isn't in the repo | [observed] |
+| E11 | `src/model_loader.py` (found 2026-10-06) | With transformers 5.x, `get_image_features` / `get_text_features` return `BaseModelOutputWithPooling` instead of a tensor, so every embedding failed (`'BaseModelOutputWithPooling' object has no attribute 'norm'`) | [observed] |
 | E10 | `scripts/evaluate_model.py:126-129` | The target file name defaults to `.jpg` and falls back to a prefix scan of the directory for each sample, which is O(N) per query | [read] |
 
 ---
@@ -182,7 +183,10 @@ Every phase gets its own change ID and follows the same cycle: **plan → your a
 
 ---
 
-## 6. Decisions needed from you
+## 6. Decisions (resolved 2026-10-06)
+
+> Resolution: D1 = **A2D2** (chosen by user after a license review; Cityscapes was excluded because its terms require a scientific affiliation, CoVLA because it is academic/non-commercial only and recorded in Japan). D2–D5 = the recommended options below, approved when the user told me to implement.
+
 
 **D1: Which dataset?** *(blocks Phase 3)*
 Tell me what it is and where it is (a local path or a download link), and whether it has text captions.
@@ -213,3 +217,24 @@ The README is the original author's. Keep a "Based on Tekraj15/zero-shot-vision-
 - Nothing is deleted without your specific per-operation approval. A reversible option is always offered.
 - Commits: conventional single-line subject, unwrapped body, **no AI attribution or co-author trailers.** Committing and pushing are separate approvals.
 - Every change is recorded in `artifacts/changelogs.md` and `artifacts/audit.md` (append-only).
+
+---
+
+## 8. Implementation status (2026-10-08)
+
+| Phase | Change ID | Status | Evidence |
+|---|---|---|---|
+| 0 Environment & hygiene | CHG-20261006-01 | ✅ Done | `.gitignore`, `.env.example`, venv with torch 2.11 + cu128 and `cuda=True` |
+| 1 Shared modules | CHG-20261006-02 | ✅ Done | `src/config.py`, `device.py`, `ids.py`, `datasets/`, `search.py`, `evaluation.py` |
+| 2 Windows ID fix | CHG-20261006-03 | ✅ Done | Regression test `tests/test_ids.py` |
+| 2b transformers 5.x fix | CHG-20261006-03 | ✅ Done | Embeddings match the model's forward-pass `image_embeds` / `text_embeds`. Regression test `tests/test_model_loader.py` |
+| 3 A2D2 adapter | CHG-20261006-04 | ✅ Done | 1,978 frames, 23 scenes, labels from the masks |
+| 4 Ingest & index | CHG-20261006-04 | ✅ Done | Pinecone `zero-shot-vision` / namespace `a2d2`: 1,978 vectors. A re-run skips all 1,978 |
+| 5 Evaluate | CHG-20261006-05 | ✅ Done | Mean Precision@10 0.79 vs base rate 0.27 (`artifacts/eval_a2d2.json`) |
+| 6 App + REST API | CHG-20261006-05 | ✅ Done | Live API: all endpoints and error cases pass. Streamlit AppTest: 12 images, filter works |
+| 7 Docs | CHG-20261006-06 | ✅ Done | README, changelog, audit |
+
+**Open follow-ups**
+- "Utility vehicle" query scores 0.00 Precision@10. Investigate query wording and prompt ensembling.
+- Caption re-ranking is unused for A2D2. Options: generate captions locally with an open-licensed VLM, or re-rank using the labels.
+- The transformers deprecation warning for `use_fast` (switch to `backend="torchvision"`).
