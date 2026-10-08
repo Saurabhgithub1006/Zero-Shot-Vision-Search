@@ -1,6 +1,8 @@
 import torch
 from sentence_transformers import CrossEncoder
 
+from src.device import select_device
+
 class Ranker:
     def __init__(self, model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"):
         """
@@ -9,12 +11,7 @@ class Ranker:
         Args:
             model_name (str): The name of the Cross-Encoder model.
         """
-        self.device = "cpu"
-        if torch.backends.mps.is_available():
-            self.device = "mps"
-        elif torch.cuda.is_available():
-            self.device = "cuda"
-            
+        self.device = select_device()
         print(f"Loading Ranker model {model_name} on {self.device}...")
         self.model = CrossEncoder(model_name, device=self.device)
         print("Ranker model loaded.")

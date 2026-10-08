@@ -39,3 +39,9 @@ def get_image_paths(assets_dir):
                 image_paths.append(os.path.join(root, file))
                 
     return image_paths
+
+def get_field(obj, name, default=None):
+    """Read a field from Pinecone responses, which are dict-like or objects depending on SDK version."""
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return getattr(obj, name, default)

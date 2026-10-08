@@ -4,23 +4,28 @@ import os
 import time
 from pinecone import Pinecone, ServerlessSpec
 
+from src.config import get_settings
+
 class Indexer:
-    def __init__(self, index_name="vision-scout", dimension=1152, metric="cosine"):
+    def __init__(self, index_name=None, namespace=None, dimension=None, metric="cosine"):
         """
         Initialize Pinecone Indexer.
         
         Args:
-            index_name (str): Name of the index.
-            dimension (int): Dimension of the vectors. Default is 1152 for SigLIP so400m.
+            index_name (str): Name of the index. Defaults to the configured index.
+            namespace (str): Namespace inside the index, one per dataset. Defaults to the configured dataset.
+            dimension (int): Dimension of the vectors. Defaults to the configured embedding size.
             metric (str): Metric for similarity search.
         """
+        settings = get_settings()
         self.api_key = os.environ.get("PINECONE_API_KEY")
         if not self.api_key:
             raise ValueError("PINECONE_API_KEY environment variable not set.")
         
         self.pc = Pinecone(api_key=self.api_key)
-        self.index_name = index_name
-        self.dimension = dimension
+        self.index_name = index_name or settings.pinecone_index
+        self.namespace = namespace or settings.dataset
+        self.dimension = dimension or settings.embedding_dim
         self.metric = metric
         self.index = None
         
@@ -62,21 +67,25 @@ class Indexer:
         
         for i in range(0, total_vectors, batch_size):
             batch = vectors[i:i + batch_size]
-            self.index.upsert(vectors=batch)
+            self.index.upsert(vectors=batch, namespace=self.namespace)
             print(f"Upserted batch {i // batch_size + 1}/{(total_vectors + batch_size - 1) // batch_size}")
             
-    def search(self, vector, top_k=5):
+    def search(self, vector, top_k=5, metadata_filter=None):
         """
         Search the Pinecone index.
         
         Args:
             vector (list): Query vector.
             top_k (int): Number of results to return.
+            metadata_filter (dict): Optional Pinecone metadata filter.
             
         Returns:
             dict: Query results.
         """
-        return self.index.query(vector=vector, top_k=top_k, include_metadata=True)
+        return self.index.query(
+            vector=vector, top_k=top_k, include_metadata=True,
+            namespace=self.namespace, filter=metadata_filter,
+        )
 
     def fetch_vectors(self, ids):
         """
@@ -88,7 +97,7 @@ class Indexer:
         Returns:
             dict: Dictionary containing the fetched vectors.
         """
-        return self.index.fetch(ids=ids)
+        return self.index.fetch(ids=ids, namespace=self.namespace)
 
     def delete_index(self):
         """Delete the index."""
