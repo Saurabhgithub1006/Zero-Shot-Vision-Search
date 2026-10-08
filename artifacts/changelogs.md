@@ -59,3 +59,13 @@
 **Result:** README, roadmap status, changelog and audit log are up to date.
 
 **Files:** `README.md`, `artifacts/system-arch-and-roadmap.md`, `artifacts/changelogs.md`, `artifacts/audit.md`
+
+## CHG-20261008-01 — Hugging Face Spaces deployment — 2026-10-08
+
+**What:** The search app can be published as a public Hugging Face Space without hosting the A2D2 images.
+
+**How it works:** Each A2D2 record carries the URL of its original frame in Audi's public bucket. The app and the `/images` API endpoint fall back to that URL when the file isn't stored locally, so the Space only needs the code and the 496 KB frame→class manifest. A CPU-only Docker image (`Dockerfile`, `requirements-space.txt`) bakes in the SigLIP weights for fast cold starts. `scripts/deploy_space.py` uploads exactly the files the container needs, with the Space README from `deploy/space_README.md`. The Pinecone key is supplied as a Space secret.
+
+**Result:** In a copy containing only the Space files, with the GPU hidden, the app loaded in 15.7 s, answered queries in 0.5 s (3.8 s for the first), and rendered 12 images from Audi's bucket. The label filter and attribution work. 25 of 25 sampled source URLs return HTTP 200. 49 tests pass.
+
+**Files:** `src/datasets/a2d2.py`, `src/search.py`, `app.py`, `api.py`, `Dockerfile`, `requirements-space.txt`, `deploy/space_README.md`, `scripts/deploy_space.py`, `.gitignore`, `assets/a2d2/manifest.csv`, `README.md`, `tests/*`

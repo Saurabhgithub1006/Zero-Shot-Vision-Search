@@ -103,3 +103,23 @@
 **Alternatives rejected:** None.
 **Validation:** README commands match the scripts that were run during validation.
 **Follow-ups:** None.
+
+## CHG-20261008-01 — 2026-10-08
+
+**Issue:** The user asked to deploy the project on Hugging Face.
+
+**Root cause:** Not a defect (new capability). Constraint: the app read images from the local 6.8 GB dataset copy, which a Space doesn't have and shouldn't re-host.
+
+**Impact:** No images re-hosted (0 bytes of A2D2 imagery in the Space). Measured CPU query latency is 0.5 s after the first query (3.8 s).
+
+**Fix implemented:** Source-linked image delivery with a CPU Docker Space and a scripted publish step
+
+**Decisions made:**
+- Load images from Audi's official bucket instead of uploading them (keeps the CC BY-ND terms trivially satisfied). Recommended by the agent.
+- Keep Pinecone (supplied as a Space secret) rather than bundling embeddings. Keeps the architecture identical to local.
+- Docker SDK on port 8501, because the Streamlit SDK was deprecated on Spaces on 2025-04-30.
+- No license tag in the Space metadata: the upstream code has no license, so none can be declared yet.
+
+**Alternatives rejected:** Uploading the images to a HF dataset repo (6.8 GB, redistribution). Resized copies (would be adapted material under ND). A GitHub Action for auto-sync (needs an HF token in GitHub; deferred).
+**Validation:** 49 tests (redirect and source-URL tests added). Space-mode run on CPU from only the uploaded files. Static check that every third-party import is in `requirements-space.txt` (`sentence-transformers` is deliberately excluded because the caption re-ranker is never loaded for A2D2). The Docker image could not be built locally (Docker isn't installed, and Windows Smart App Control blocks fresh CPU-torch DLLs), so the first real image build happens on Hugging Face.
+**Follow-ups:** Watch the first Space build log. Decide on a project license with the upstream author.

@@ -54,6 +54,10 @@ def test_a2d2_manifest_to_records(tmp_path):
     assert [r.labels for r in records] == [["Car", "Sky"], []]
     assert records[0].extra["scene"] == "s1"
     assert records[0].filename == "a.png"
+    assert records[0].extra["source_url"] == (
+        "https://audi-autonomous-driving-dataset.s3.eu-central-1.amazonaws.com"
+        "/camera_lidar_semantic/s1/camera/cam_front_center/a.png"
+    )
 
 
 def test_a2d2_missing_manifest_gives_no_records(tmp_path):

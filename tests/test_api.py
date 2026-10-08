@@ -82,3 +82,11 @@ def test_image_missing_file_is_404(client, labeled_records, monkeypatch, tmp_pat
 
 def test_path_traversal_is_not_possible(client):
     assert client.get("/images/..%2F..%2F.env").status_code == 404
+
+
+def test_image_missing_locally_redirects_to_source(client, labeled_records, monkeypatch, tmp_path):
+    labeled_records[0].extra["source_url"] = "https://example.org/a.png"
+    monkeypatch.setattr(api, "project_path", lambda *parts: str(tmp_path / "gone.png"))
+    resp = client.get(f"/images/{labeled_records[0].id}", follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"] == "https://example.org/a.png"

@@ -71,3 +71,9 @@ def test_empty_index_returns_no_results(labeled_records):
     service = make_service(labeled_records)
     service.indexer.search = lambda *a, **k: {"matches": []}
     assert service.search("x") == []
+
+
+def test_result_carries_source_url(labeled_records):
+    labeled_records[0].extra["source_url"] = "https://example.org/a.png"
+    results = make_service(labeled_records).search("x", top_k=1)
+    assert results[0].source_url == "https://example.org/a.png"

@@ -15,6 +15,9 @@ DATA_DIR = project_path("assets", "a2d2")
 MANIFEST_PATH = os.path.join(DATA_DIR, "manifest.csv")
 CLASS_LIST_PATH = os.path.join(DATA_DIR, "class_list.json")
 
+# Official public bucket: images can be shown from the source instead of being re-hosted
+SOURCE_BASE_URL = "https://audi-autonomous-driving-dataset.s3.eu-central-1.amazonaws.com/camera_lidar_semantic"
+
 # Ignore tiny label fragments so a class only counts when it is actually visible
 MIN_CLASS_PIXELS = 1500
 
@@ -45,6 +48,10 @@ def label_classes_from_file(label_path, color_map, min_pixels=MIN_CLASS_PIXELS):
         return classes_in_label(np.asarray(img.convert("RGB")), color_map, min_pixels)
 
 
+def source_url(scene, filename):
+    return f"{SOURCE_BASE_URL}/{scene}/camera/cam_front_center/{filename}"
+
+
 def write_manifest(rows, manifest_path=MANIFEST_PATH):
     with open(manifest_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["scene", "image_path", "labels"])
@@ -68,7 +75,7 @@ class A2D2Dataset(Dataset):
                 with open(self.manifest_path, "r", encoding="utf-8") as f:
                     for row in csv.DictReader(f):
                         labels = [l for l in row["labels"].split(";") if l]
-                        self._records.append(
-                            make_record(row["image_path"], labels=labels, extra={"scene": row["scene"]})
-                        )
+                        filename = row["image_path"].rsplit("/", 1)[-1]
+                        extra = {"scene": row["scene"], "source_url": source_url(row["scene"], filename)}
+                        self._records.append(make_record(row["image_path"], labels=labels, extra=extra))
         return self._records

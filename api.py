@@ -6,7 +6,7 @@ from typing import List
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 load_dotenv()
@@ -85,6 +85,8 @@ def image(image_id: str, service: SearchService = Depends(get_service)):
     if record is None:
         raise HTTPException(status_code=404, detail="Unknown image id.")
     path = project_path(record.path)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Image file not found on disk.")
-    return FileResponse(path)
+    if os.path.exists(path):
+        return FileResponse(path)
+    if record.extra.get("source_url"):
+        return RedirectResponse(record.extra["source_url"])
+    raise HTTPException(status_code=404, detail="Image file not found.")

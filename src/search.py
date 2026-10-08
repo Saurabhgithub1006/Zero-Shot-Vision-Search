@@ -15,6 +15,7 @@ class SearchResult:
     labels: list = field(default_factory=list)
     caption: str = ""
     scene: str = ""
+    source_url: str = ""  # public original, used when the image isn't stored locally
 
 
 def label_filter(labels):
@@ -71,6 +72,7 @@ class SearchService:
             labels=list(meta.get("labels", record.labels if record else [])),
             caption=(record.caption if record else None) or "",
             scene=meta.get("scene", ""),
+            source_url=(record.extra.get("source_url", "") if record else ""),
         )
 
     def _rerank(self, query, results, top_k):
@@ -88,10 +90,12 @@ def build_search_service():
     from src.config import get_settings
     from src.datasets import get_dataset
     from src.model_loader import ModelLoader
-    from src.ranker import Ranker
     from src.vector_indexer import Indexer
 
     settings = get_settings()
     dataset = get_dataset(settings.dataset)
-    ranker = Ranker(settings.reranker_model) if dataset.has_captions else None
+    ranker = None
+    if dataset.has_captions:
+        from src.ranker import Ranker
+        ranker = Ranker(settings.reranker_model)
     return SearchService(ModelLoader(), Indexer(), dataset, ranker=ranker, candidate_k=settings.candidate_k)

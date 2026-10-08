@@ -117,6 +117,18 @@ curl -X POST http://localhost:8000/search -H "Content-Type: application/json" \
      -d '{"query": "a cyclist next to parked cars", "top_k": 5}'
 ```
 
+## Deploy to Hugging Face Spaces
+
+The Space runs the Streamlit app on CPU in Docker (`Dockerfile`, `requirements-space.txt`). Images are loaded unmodified from the official A2D2 bucket, so the Space never hosts the dataset. Only the frame→class manifest (`assets/a2d2/manifest.csv`) ships with the code.
+
+```bash
+hf auth login                                                    # token with write access
+python scripts/deploy_space.py --repo-id <hf-user>/zero-shot-driving-search --dry-run
+python scripts/deploy_space.py --repo-id <hf-user>/zero-shot-driving-search
+```
+
+Then, in the Space: **Settings → Variables and secrets → New secret** → `PINECONE_API_KEY`. The index must already be populated (`scripts/ingest_and_index.py` run locally).
+
 ## Credits
 
 - Based on [Tekraj15/zero-shot-vision-search](https://github.com/Tekraj15/zero-shot-vision-search) (original Unsplash-based implementation).

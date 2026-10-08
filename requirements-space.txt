@@ -1,0 +1,13 @@
+# Runtime dependencies for the Hugging Face Space (CPU only, Streamlit UI).
+# Images are shown from the official A2D2 bucket, so no dataset is bundled.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.7.0
+torchvision>=0.22.0
+transformers>=4.40.0
+sentencepiece>=0.1.99
+protobuf>=4.25.0
+pillow>=10.1.0
+numpy>=1.24.3
+pinecone>=3.0.0
+streamlit>=1.42.0
+python-dotenv>=1.0.0

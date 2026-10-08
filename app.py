@@ -98,8 +98,9 @@ def main():
             for idx, result in enumerate(results):
                 img_path = os.path.join(os.path.dirname(__file__), result.path)
                 with cols[idx % 3]:
-                    if os.path.exists(img_path):
-                        st.image(Image.open(img_path), width="stretch", caption=f"Score: {result.score:.3f}")
+                    image = Image.open(img_path) if os.path.exists(img_path) else result.source_url
+                    if image:
+                        st.image(image, width="stretch", caption=f"Score: {result.score:.3f}")
                         if result.labels:
                             st.caption(", ".join(result.labels))
                     else:
