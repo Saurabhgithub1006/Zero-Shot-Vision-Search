@@ -1,0 +1,17 @@
+# Secrets
+.env
+*.pem
+*.key
+# Editor local-history snapshots (can contain .env copies)
+.history/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Local data (datasets are downloaded, never committed)
+data/
+assets/image-dataset/
+assets/a2d2/
