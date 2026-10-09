@@ -119,17 +119,28 @@ curl -X POST http://localhost:8000/search -H "Content-Type: application/json" \
      -d '{"query": "a cyclist next to parked cars", "top_k": 5}'
 ```
 
-## Deploy to Hugging Face Spaces
+## Deploy to Hugging Face
 
-The Space runs the Streamlit app on CPU in Docker (`Dockerfile`, `requirements-space.txt`). Images are loaded unmodified from the official A2D2 bucket, so the Space never hosts the dataset. Only the frame→class manifest (`assets/a2d2/manifest.csv`) ships with the code.
+Two repos on Hugging Face:
+
+| Repo | Type | Content |
+|---|---|---|
+| `<hf-user>/a2d2-front-center-subset` | Dataset (public, free) | The 1,978 unmodified frames + label masks, manifest, dataset card with CC BY-ND attribution |
+| `<hf-user>/zero-shot-driving-search` | Space (Docker, cpu-basic, needs PRO) | The Streamlit app; loads images and the manifest from the dataset repo |
 
 ```bash
-hf auth login                                                    # token with write access
-python scripts/deploy_space.py --repo-id <hf-user>/zero-shot-driving-search --dry-run
-python scripts/deploy_space.py --repo-id <hf-user>/zero-shot-driving-search
+hf auth login                                     # token with WRITE access
+
+# 1. Dataset: check locally, upload (resumable), verify
+python scripts/upload_dataset.py --repo-id <hf-user>/a2d2-front-center-subset --dry-run
+python scripts/upload_dataset.py --repo-id <hf-user>/a2d2-front-center-subset
+python scripts/upload_dataset.py --repo-id <hf-user>/a2d2-front-center-subset --verify
+
+# 2. Space: upload the app and point it at the dataset
+python scripts/deploy_space.py --repo-id <hf-user>/zero-shot-driving-search        --dataset-repo <hf-user>/a2d2-front-center-subset
 ```
 
-Then, in the Space: **Settings → Variables and secrets → New secret** → `PINECONE_API_KEY`. The index must already be populated (`scripts/ingest_and_index.py` run locally).
+Then add the secret in the Space: **Settings → Variables and secrets → New secret** → `PINECONE_API_KEY`. The deploy script sets the public variable `A2D2_HF_DATASET`. Without it, the app falls back to Audi's public bucket. The Pinecone index must already be populated (`scripts/ingest_and_index.py`).
 
 ## Credits
 

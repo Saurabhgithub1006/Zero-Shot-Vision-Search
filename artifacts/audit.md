@@ -140,3 +140,23 @@
 **Alternatives rejected:** Google Cloud Run (needs a credit card and more setup).
 **Validation:** Space runtime `RUNNING` on cpu-basic. `/_stcore/health` returns 200. A headless browser search returned 12 results, 12/12 images decoded, 0 console errors, 0 failed requests. The key was checked to be absent from git history and from the Space files.
 **Follow-ups:** The earlier statement to the user that hosting would be "completely free" was wrong and has been corrected. Cancelling PRO will stop the Space. The project license is still unresolved (the upstream repo has no license).
+
+## CHG-20261009-02 — 2026-10-09
+
+**Issue:** The user asked for the dataset to be hosted on Hugging Face so that production fetches the data from there.
+
+**Root cause:** Not a defect (new capability). Production previously depended on Audi's bucket for images.
+
+**Impact:** 3,958 files (7.21 GB) to upload once. Hugging Face dataset storage is free for public repos.
+
+**Fix implemented:** Self-hosted unmodified A2D2 subset with a switchable image source
+
+**Decisions made:**
+- Public dataset repo. Required, because visitors' browsers fetch the images directly.
+- Upload unmodified originals only, with a dataset card naming Audi AG, the license and the no-modification statement. CC BY-ND permits verbatim redistribution with attribution. Resized copies would be adapted material.
+- Label masks and Audi's `class_list.json` are included unmodified, so the evaluation can be reproduced from the dataset repo alone.
+- Audi's bucket is kept as the default fallback when `A2D2_HF_DATASET` is unset.
+
+**Alternatives rejected:** Bundling images in the Space repo (bloats every rebuild).
+**Validation:** Unit tests. Dry run of both scripts. `--verify` exists to confirm the upload after it runs.
+**Follow-ups:** The Space itself still requires PRO. The user cancelled the subscription, so the Space will stop when the paid period ends, whatever the image source.

@@ -13,12 +13,14 @@ class Settings:
     embedding_dim: int = 1152
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     candidate_k: int = 50
+    a2d2_hf_dataset: str = ""  # HF dataset repo hosting the frames; empty = Audi's public bucket
 
 
 def get_settings():
     return Settings(
         dataset=os.environ.get("DATASET", "a2d2"),
         pinecone_index=os.environ.get("PINECONE_INDEX", "zero-shot-vision"),
+        a2d2_hf_dataset=os.environ.get("A2D2_HF_DATASET", ""),
     )
 
 

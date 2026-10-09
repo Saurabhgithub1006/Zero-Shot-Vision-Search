@@ -8,7 +8,7 @@ import re
 import numpy as np
 from PIL import Image
 
-from src.config import project_path
+from src.config import get_settings, project_path
 from src.datasets.base import Dataset, make_record
 
 DATA_DIR = project_path("assets", "a2d2")
@@ -48,8 +48,17 @@ def label_classes_from_file(label_path, color_map, min_pixels=MIN_CLASS_PIXELS):
         return classes_in_label(np.asarray(img.convert("RGB")), color_map, min_pixels)
 
 
-def source_url(scene, filename):
+def source_url(scene, filename, hf_dataset=""):
+    """Public URL of an original frame: our Hugging Face dataset copy if configured, else Audi's bucket."""
+    if hf_dataset:
+        return f"https://huggingface.co/datasets/{hf_dataset}/resolve/main/camera/{scene}/{filename}"
     return f"{SOURCE_BASE_URL}/{scene}/camera/cam_front_center/{filename}"
+
+
+def fetch_manifest(hf_dataset):
+    """Download manifest.csv from the Hugging Face dataset (cached locally by huggingface_hub)."""
+    from huggingface_hub import hf_hub_download
+    return hf_hub_download(repo_id=hf_dataset, filename="manifest.csv", repo_type="dataset")
 
 
 def write_manifest(rows, manifest_path=MANIFEST_PATH):
@@ -64,18 +73,23 @@ class A2D2Dataset(Dataset):
     name = "a2d2"
     has_labels = True
 
-    def __init__(self, manifest_path=MANIFEST_PATH):
+    def __init__(self, manifest_path=MANIFEST_PATH, hf_dataset=None):
         self.manifest_path = manifest_path
+        self.hf_dataset = get_settings().a2d2_hf_dataset if hf_dataset is None else hf_dataset
         self._records = None
 
     def records(self):
         if self._records is None:
             self._records = []
+            # Prefer the bundled manifest; fall back to the copy in the HF dataset
+            if not os.path.exists(self.manifest_path) and self.hf_dataset:
+                self.manifest_path = fetch_manifest(self.hf_dataset)
             if os.path.exists(self.manifest_path):
                 with open(self.manifest_path, "r", encoding="utf-8") as f:
                     for row in csv.DictReader(f):
                         labels = [l for l in row["labels"].split(";") if l]
                         filename = row["image_path"].rsplit("/", 1)[-1]
-                        extra = {"scene": row["scene"], "source_url": source_url(row["scene"], filename)}
+                        url = source_url(row["scene"], filename, self.hf_dataset)
+                        extra = {"scene": row["scene"], "source_url": url}
                         self._records.append(make_record(row["image_path"], labels=labels, extra=extra))
         return self._records

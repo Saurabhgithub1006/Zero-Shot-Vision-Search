@@ -50,7 +50,7 @@ def test_a2d2_manifest_to_records(tmp_path):
         {"scene": "s1", "image_path": "assets/a2d2/camera/s1/a.png", "labels": ["Car", "Sky"]},
         {"scene": "s2", "image_path": "assets/a2d2/camera/s2/b.png", "labels": []},
     ], str(manifest))
-    records = A2D2Dataset(str(manifest)).records()
+    records = A2D2Dataset(str(manifest), hf_dataset="").records()
     assert [r.labels for r in records] == [["Car", "Sky"], []]
     assert records[0].extra["scene"] == "s1"
     assert records[0].filename == "a.png"
@@ -61,7 +61,7 @@ def test_a2d2_manifest_to_records(tmp_path):
 
 
 def test_a2d2_missing_manifest_gives_no_records(tmp_path):
-    assert A2D2Dataset(str(tmp_path / "missing.csv")).records() == []
+    assert A2D2Dataset(str(tmp_path / "missing.csv"), hf_dataset="").records() == []
 
 
 def test_unsplash_attaches_captions(tmp_path):
@@ -82,3 +82,27 @@ def test_registry():
     assert get_dataset("unsplash").has_captions
     with pytest.raises(ValueError):
         get_dataset("nope")
+
+
+def test_a2d2_urls_point_to_hf_dataset_when_configured(tmp_path):
+    manifest = tmp_path / "manifest.csv"
+    write_manifest([{"scene": "s1", "image_path": "assets/a2d2/camera/s1/a.png", "labels": ["Car"]}], str(manifest))
+    record = A2D2Dataset(str(manifest), hf_dataset="me/a2d2-subset").records()[0]
+    assert record.extra["source_url"] == "https://huggingface.co/datasets/me/a2d2-subset/resolve/main/camera/s1/a.png"
+
+
+def test_a2d2_manifest_is_fetched_from_hf_when_not_bundled(tmp_path, monkeypatch):
+    remote = tmp_path / "remote_manifest.csv"
+    write_manifest([{"scene": "s1", "image_path": "assets/a2d2/camera/s1/a.png", "labels": ["Car"]}], str(remote))
+    calls = []
+    monkeypatch.setattr("src.datasets.a2d2.fetch_manifest", lambda repo: calls.append(repo) or str(remote))
+    records = A2D2Dataset(str(tmp_path / "not_bundled.csv"), hf_dataset="me/a2d2-subset").records()
+    assert calls == ["me/a2d2-subset"]
+    assert [r.labels for r in records] == [["Car"]]
+
+
+def test_bundled_manifest_is_preferred_over_hf(tmp_path, monkeypatch):
+    manifest = tmp_path / "manifest.csv"
+    write_manifest([{"scene": "s1", "image_path": "assets/a2d2/camera/s1/a.png", "labels": []}], str(manifest))
+    monkeypatch.setattr("src.datasets.a2d2.fetch_manifest", lambda repo: pytest.fail("should not download"))
+    assert len(A2D2Dataset(str(manifest), hf_dataset="me/a2d2-subset").records()) == 1

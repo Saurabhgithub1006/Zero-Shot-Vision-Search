@@ -11,3 +11,4 @@ numpy>=1.24.3
 pinecone>=3.0.0
 streamlit>=1.42.0
 python-dotenv>=1.0.0
+huggingface_hub>=0.25.0 # fetches the manifest from the HF dataset if not bundled

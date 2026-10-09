@@ -79,3 +79,13 @@
 **Result:** The Docker build succeeded on the first attempt. In a live headless-browser test, the search box appeared after 8 s, the query "a cyclist next to parked cars" returned 12 matches in 5.7 s, and all 12 images decoded, with 0 console errors and 0 failed requests. The README links to the demo.
 
 **Files:** `README.md`
+
+## CHG-20261009-02 — Dataset hosting on Hugging Face — 2026-10-09
+
+**What:** The deployed app can load its images and manifest from the project's own Hugging Face dataset repo instead of Audi's bucket.
+
+**How it works:** `scripts/upload_dataset.py` checks that every manifest frame has its image and label mask, creates a public dataset repo, uploads the dataset card (`deploy/dataset_card.md`, CC BY-ND 4.0 attribution, no-modification statement), and uploads the unmodified originals with `upload_large_folder`, which is resumable. `--verify` compares remote and local file lists and fetches sample images through the public URLs the app uses. The `A2D2_HF_DATASET` setting switches image URLs to `huggingface.co/datasets/<repo>/resolve/main/camera/<scene>/<frame>.png` and lets the app download `manifest.csv` from the dataset when it isn't bundled. `scripts/deploy_space.py --dataset-repo` sets that variable on the Space.
+
+**Result:** 52 tests pass (HF URL, manifest fetch and fallback order added). The dry run confirmed 3,958 files (7.21 GB) complete locally. Hugging Face `resolve` URLs were confirmed to serve `image/png` after one redirect.
+
+**Files:** `scripts/upload_dataset.py`, `deploy/dataset_card.md`, `scripts/deploy_space.py`, `src/config.py`, `src/datasets/a2d2.py`, `requirements-space.txt`, `tests/test_datasets.py`, `README.md`
