@@ -160,3 +160,20 @@
 **Alternatives rejected:** Bundling images in the Space repo (bloats every rebuild).
 **Validation:** Unit tests. Dry run of both scripts. `--verify` exists to confirm the upload after it runs.
 **Follow-ups:** The Space itself still requires PRO. The user cancelled the subscription, so the Space will stop when the paid period ends, whatever the image source.
+
+## CHG-20261009-03 — 2026-10-09
+
+**Issue:** Production should fetch its data from the project's Hugging Face dataset.
+
+**Root cause:** Not a defect (rollout of CHG-20261009-02).
+
+**Impact:** 7.21 GB hosted on Hugging Face. 0% of production image requests go to Audi's bucket (12/12 from HF in the live test).
+
+**Fix implemented:** Live app served from the self-hosted dataset copy
+
+**Decisions made:**
+- The user uploaded the dataset from their own terminal. The agent ran the dry run, the independent verification and the Space redeploy.
+
+**Alternatives rejected:** None.
+**Validation:** Independent `--verify` with 25 samples. Byte comparison of the manifest. Record loading through the HF manifest (1,978 records). Live headless-browser search on the Space.
+**Follow-ups:** The Space stops when the cancelled PRO period ends. The dataset repo remains available for free.

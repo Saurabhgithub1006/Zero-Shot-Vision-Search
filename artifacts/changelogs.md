@@ -89,3 +89,13 @@
 **Result:** 52 tests pass (HF URL, manifest fetch and fallback order added). The dry run confirmed 3,958 files (7.21 GB) complete locally. Hugging Face `resolve` URLs were confirmed to serve `image/png` after one redirect.
 
 **Files:** `scripts/upload_dataset.py`, `deploy/dataset_card.md`, `scripts/deploy_space.py`, `src/config.py`, `src/datasets/a2d2.py`, `requirements-space.txt`, `tests/test_datasets.py`, `README.md`
+
+## CHG-20261009-03 — Production switched to the Hugging Face dataset — 2026-10-09
+
+**What:** The live Space now loads its images from https://huggingface.co/datasets/Sabbysab/a2d2-front-center-subset.
+
+**How it works:** The user uploaded the subset with `scripts/upload_dataset.py`. The Space was redeployed with `--dataset-repo`, which set the Space variable `A2D2_HF_DATASET`.
+
+**Result:** `--verify` reported 3,960 remote files (3,958 data files + card + `.gitattributes`), 0 missing, and 25/25 sampled public URLs reachable. The remote manifest is byte-identical to the local one, and the repo is public with the `cc-by-nd-4.0` tag. In a live browser test, the query "a cyclist next to parked cars" returned 12 matches in 5.3 s, with 12/12 images from the HF dataset, 0 from Audi's bucket, 0 console errors and 0 failed requests.
+
+**Files:** none (deployment and configuration only)
