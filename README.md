@@ -1,5 +1,7 @@
 # Zero-Shot Driving Scenario Search
 
+**🚗 Live demo:** [huggingface.co/spaces/Sabbysab/zero-shot-driving-search](https://huggingface.co/spaces/Sabbysab/zero-shot-driving-search) *(may take a minute to wake up)*
+
 Find safety-critical driving scenarios in automotive camera data by describing them in plain language — no labelling, no retraining.
 
 > *"a cyclist next to parked cars"* → the matching frames from Audi's test drives on German roads, ranked by relevance.

@@ -123,3 +123,20 @@
 **Alternatives rejected:** Uploading the images to a HF dataset repo (6.8 GB, redistribution). Resized copies (would be adapted material under ND). A GitHub Action for auto-sync (needs an HF token in GitHub; deferred).
 **Validation:** 49 tests (redirect and source-URL tests added). Space-mode run on CPU from only the uploaded files. Static check that every third-party import is in `requirements-space.txt` (`sentence-transformers` is deliberately excluded because the caption re-ranker is never loaded for A2D2). The Docker image could not be built locally (Docker isn't installed, and Windows Smart App Control blocks fresh CPU-torch DLLs), so the first real image build happens on Hugging Face.
 **Follow-ups:** Watch the first Space build log. Decide on a project license with the upstream author.
+
+## CHG-20261009-01 — 2026-10-09
+
+**Issue:** The deployment from CHG-20261008-01 had to be published and verified live.
+
+**Root cause:** Not a defect. Two blockers came up during publishing: (1) the local Hugging Face token was fine-grained without Space-creation rights (403), which the user resolved with a write token; (2) Hugging Face now requires PRO for Docker/Gradio Spaces even on cpu-basic (402), which the user resolved by subscribing to PRO ($9/month).
+
+**Impact:** Recurring cost of $9/month for the PRO subscription. Hardware stays cpu-basic, with no compute charges. Live search latency is 5.7 s for the first query.
+
+**Fix implemented:** Public Space with secret-based Pinecone access and a verified live search
+
+**Decisions made:**
+- Host on Hugging Face PRO rather than a free host. Chosen by the user. Rejected alternative: Streamlit Community Cloud with a text-only bf16 encoder (0.9 GB, verified identical embeddings with cosine 1.0, but close to the free RAM limit).
+
+**Alternatives rejected:** Google Cloud Run (needs a credit card and more setup).
+**Validation:** Space runtime `RUNNING` on cpu-basic. `/_stcore/health` returns 200. A headless browser search returned 12 results, 12/12 images decoded, 0 console errors, 0 failed requests. The key was checked to be absent from git history and from the Space files.
+**Follow-ups:** The earlier statement to the user that hosting would be "completely free" was wrong and has been corrected. Cancelling PRO will stop the Space. The project license is still unresolved (the upstream repo has no license).

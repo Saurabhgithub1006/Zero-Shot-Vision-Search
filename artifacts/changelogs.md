@@ -69,3 +69,13 @@
 **Result:** In a copy containing only the Space files, with the GPU hidden, the app loaded in 15.7 s, answered queries in 0.5 s (3.8 s for the first), and rendered 12 images from Audi's bucket. The label filter and attribution work. 25 of 25 sampled source URLs return HTTP 200. 49 tests pass.
 
 **Files:** `src/datasets/a2d2.py`, `src/search.py`, `app.py`, `api.py`, `Dockerfile`, `requirements-space.txt`, `deploy/space_README.md`, `scripts/deploy_space.py`, `.gitignore`, `assets/a2d2/manifest.csv`, `README.md`, `tests/*`
+
+## CHG-20261009-01 — Public demo on Hugging Face Spaces — 2026-10-09
+
+**What:** The search app is publicly available at https://huggingface.co/spaces/Sabbysab/zero-shot-driving-search.
+
+**How it works:** Deployed with `scripts/deploy_space.py` as a Docker Space on cpu-basic hardware (Docker Spaces require a Hugging Face PRO subscription). The Pinecone key is stored as a Space secret. Images stream from Audi's public A2D2 bucket.
+
+**Result:** The Docker build succeeded on the first attempt. In a live headless-browser test, the search box appeared after 8 s, the query "a cyclist next to parked cars" returned 12 matches in 5.7 s, and all 12 images decoded, with 0 console errors and 0 failed requests. The README links to the demo.
+
+**Files:** `README.md`
