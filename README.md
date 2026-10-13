@@ -56,16 +56,7 @@ graph TD
 | Search engine | `src/search.py` |
 | Download / vectors / accuracy | `scripts/download_a2d2.py`, `scripts/ingest_and_index.py`, `scripts/evaluate_model.py` |
 
-| Module | Responsibility |
-|---|---|
-| `src/config.py` | Central settings (dataset, index, model ids); secrets only from the environment |
-| `src/datasets/` | Dataset adapters (`a2d2`, `unsplash`) exposing images, captions and labels uniformly |
-| `src/model_loader.py` | SigLIP image/text embeddings on CUDA / MPS / CPU |
-| `src/vector_indexer.py` | Pinecone index with one namespace per dataset |
-| `src/search.py` | Shared search pipeline used by the app, the API and evaluation |
-| `src/evaluation.py` | Retrieval metrics and the scenario query set |
-| `api.py` | REST API |
-| `app.py` | Streamlit UI |
+ 
 
 ## Evaluation
 
