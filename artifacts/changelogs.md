@@ -109,3 +109,13 @@
 **Result:** All three diagrams parse and render with Mermaid 11 in a headless browser (they previously failed with "Parse error … got 'LINK_ID'").
 
 **Files:** `README.md`, `artifacts/system-arch-and-roadmap.md`
+
+## CHG-20261013-02 — Plain-language architecture diagram — 2026-10-13
+
+**What:** The README architecture diagram uses simple names ("Web app", "Search engine", "AI model", "Vector database", "Image storage") instead of file and product names.
+
+**How it works:** The diagram is grouped into three sections (Prepare data, Search, Measure quality). A table under it maps each box to the technology and file behind it, so the technical detail is still there.
+
+**Result:** The diagram parses and renders with Mermaid 11 (checked visually).
+
+**Files:** `README.md`

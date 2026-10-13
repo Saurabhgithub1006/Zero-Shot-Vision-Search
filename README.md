@@ -22,27 +22,36 @@ This project takes a different approach: zero-shot scenario search. Using SigLIP
 ## Architecture
 
 ```mermaid
-graph TD
-    subgraph Offline
-        DL["scripts/download_a2d2.py"] -->|"frames + label masks"| DATA["assets/a2d2 + manifest.csv"]
-        DATA --> ING["scripts/ingest_and_index.py"]
-        ING -->|"SigLIP image embeddings (1152-d)"| PC[("Pinecone, namespace per dataset")]
-        DATA -->|"upload_dataset.py"| HFD[("HF dataset: original frames")]
+graph LR
+    subgraph prep["Prepare data (once)"]
+        A["Audi driving images"] --> B["Download"]
+        B --> C["Turn images into vectors"]
+        B --> D[("Image storage")]
+        C --> E[("Vector database")]
     end
-    subgraph Online
-        U["Engineer"] --> APP["Streamlit app.py"]
-        T["Other tools"] --> API["FastAPI api.py"]
-        APP --> SVC["src/search.py SearchService"]
-        API --> SVC
-        SVC -->|"text embedding"| M["SigLIP so400m"]
-        SVC -->|"top-k + label filter"| PC
-        APP -->|"result images"| HFD
+    subgraph search["Search (every query)"]
+        U["User"] --> W["Web app"]
+        T["Other tools"] --> API["REST API"]
+        W --> S["Search engine"]
+        API --> S
+        S -->|"text to vector"| M["AI model"]
+        S -->|"find closest images"| E
+        W -->|"show images"| D
     end
-    subgraph Evaluation
-        EV["scripts/evaluate_model.py"] --> SVC
-        EV -->|"Precision@10 vs label ground truth"| R["results"]
+    subgraph measure["Measure quality"]
+        Q["Test queries"] --> S
+        Q --> R["Accuracy report"]
     end
 ```
+
+| Box | What it is |
+|---|---|
+| AI model | SigLIP (`google/siglip-so400m-patch14-384`) |
+| Vector database | Pinecone |
+| Image storage | Hugging Face dataset `Sabbysab/a2d2-front-center-subset` |
+| Web app / REST API | Streamlit (`app.py`) / FastAPI (`api.py`) |
+| Search engine | `src/search.py` |
+| Download / vectors / accuracy | `scripts/download_a2d2.py`, `scripts/ingest_and_index.py`, `scripts/evaluate_model.py` |
 
 | Module | Responsibility |
 |---|---|
