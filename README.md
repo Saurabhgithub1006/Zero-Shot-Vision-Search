@@ -6,10 +6,9 @@ Search for safety-critical driving scenarios in automotive camera footage using 
 "*A cyclist next to parked cars*" → Find and rank the most relevant frames from Audi test-drive footage on German roads.
 ## The problem
 
-Automotive OEMs and suppliers record enormous volumes of fleet and test-drive camera data. Validating driver-assistance and automated-driving functions (e.g. for ISO 21448 / SOTIF scenario coverage) requires finding the rare situations hidden in that data: a cyclist between parked cars, a zebra crossing with pedestrians, a tractor on a country road. Manually tagging every frame is slow and expensive, and fixed-class detectors only find what they were trained for.
-
-This project searches the data **zero-shot**: a vision-language model (SigLIP) embeds images and text into the same vector space, so any scenario that can be described in words can be searched, without training on it.
-
+Automotive manufacturers and suppliers collect huge amounts of camera footage from test drives and real-world driving. Finding rare but safety-critical scenarios in this data is essential for validating driver-assistance and automated-driving systems, including scenario coverage for ISO 21448 (SOTIF).
+These scenarios might include a cyclist emerging from between parked cars, pedestrians at a zebra crossing, or a tractor on a country road. Manually labelling thousands of hours of footage is time-consuming and costly, while traditional object detectors are limited by the classes they were trained to recognise.
+This project takes a different approach: zero-shot scenario search. Using SigLIP, a vision-language model, it maps images and text into a shared vector space, allowing you to search driving footage with natural-language descriptions, even for scenarios the model wasn't specifically trained to detect.
 ## Dataset
 
 [A2D2 – Audi Autonomous Driving Dataset](https://a2d2-dataset.github.io), recorded by Audi on roads in southern Germany (city, rural roads, Autobahn).
