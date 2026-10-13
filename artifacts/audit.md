@@ -177,3 +177,18 @@
 **Alternatives rejected:** None.
 **Validation:** Independent `--verify` with 25 samples. Byte comparison of the manifest. Record loading through the HF manifest (1,978 records). Live headless-browser search on the Space.
 **Follow-ups:** The Space stops when the cancelled PRO period ends. The dataset repo remains available for free.
+
+## CHG-20261013-01 — 2026-10-13
+
+**Issue:** The architecture diagram in the README was not displayed on GitHub.
+
+**Root cause:** An unquoted `@` in Mermaid arrow labels (`README.md`: `Precision@10`; roadmap: `Recall@1/5/10`) is parsed as an edge-ID token in Mermaid 11, which makes the diagram fail to parse.
+
+**Impact:** 2 of 3 project diagrams did not render.
+
+**Fix implemented:** Quoted Mermaid labels so metric names render as text
+
+**Decisions made:** Quote every label in the README diagram, not just the failing one, to prevent recurrence.
+**Alternatives rejected:** Renaming the metric to avoid `@` (less precise).
+**Validation:** Each diagram parsed and rendered with Mermaid 11 (`mermaid.parse` + `render`) before and after the fix.
+**Follow-ups:** None.

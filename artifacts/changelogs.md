@@ -99,3 +99,13 @@
 **Result:** `--verify` reported 3,960 remote files (3,958 data files + card + `.gitattributes`), 0 missing, and 25/25 sampled public URLs reachable. The remote manifest is byte-identical to the local one, and the repo is public with the `cc-by-nd-4.0` tag. In a live browser test, the query "a cyclist next to parked cars" returned 12 matches in 5.3 s, with 12/12 images from the HF dataset, 0 from Audi's bucket, 0 console errors and 0 failed requests.
 
 **Files:** none (deployment and configuration only)
+
+## CHG-20261013-01 — Architecture diagrams render on GitHub — 2026-10-13
+
+**What:** The README architecture diagram and the roadmap's current-architecture diagram now render on GitHub.
+
+**How it works:** Mermaid 11 parses `@` in an unquoted arrow label as an edge-ID marker, so labels such as `Precision@10` and `Recall@1/5/10` broke the whole diagram. All README diagram labels are now quoted, and the README diagram also shows the HF dataset that production loads images from.
+
+**Result:** All three diagrams parse and render with Mermaid 11 in a headless browser (they previously failed with "Parse error … got 'LINK_ID'").
+
+**Files:** `README.md`, `artifacts/system-arch-and-roadmap.md`

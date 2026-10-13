@@ -24,21 +24,23 @@ This project takes a different approach: zero-shot scenario search. Using SigLIP
 ```mermaid
 graph TD
     subgraph Offline
-        DL[scripts/download_a2d2.py] -->|frames + label masks| DATA[assets/a2d2 + manifest.csv]
-        DATA --> ING[scripts/ingest_and_index.py]
-        ING -->|SigLIP image embeddings 1152-d| PC[(Pinecone · namespace per dataset)]
+        DL["scripts/download_a2d2.py"] -->|"frames + label masks"| DATA["assets/a2d2 + manifest.csv"]
+        DATA --> ING["scripts/ingest_and_index.py"]
+        ING -->|"SigLIP image embeddings (1152-d)"| PC[("Pinecone, namespace per dataset")]
+        DATA -->|"upload_dataset.py"| HFD[("HF dataset: original frames")]
     end
     subgraph Online
-        U[Engineer] --> APP[Streamlit app.py]
-        T[Other tools] --> API[FastAPI api.py]
-        APP --> SVC[src/search.py SearchService]
+        U["Engineer"] --> APP["Streamlit app.py"]
+        T["Other tools"] --> API["FastAPI api.py"]
+        APP --> SVC["src/search.py SearchService"]
         API --> SVC
-        SVC -->|text embedding| M[SigLIP so400m]
-        SVC -->|top-k + label filter| PC
+        SVC -->|"text embedding"| M["SigLIP so400m"]
+        SVC -->|"top-k + label filter"| PC
+        APP -->|"result images"| HFD
     end
     subgraph Evaluation
-        EV[scripts/evaluate_model.py] --> SVC
-        EV -->|Precision@10 vs label ground truth| R[results]
+        EV["scripts/evaluate_model.py"] --> SVC
+        EV -->|"Precision@10 vs label ground truth"| R["results"]
     end
 ```
 

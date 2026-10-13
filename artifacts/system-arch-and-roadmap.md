@@ -36,7 +36,7 @@ graph TD
     subgraph Evaluation
         EV[scripts/evaluate_model.py] -->|caption as query, own image as target| PC
         EV --> RR
-        EV -->|Recall@1/5/10, MRR| OUT[console]
+        EV -->|"Recall@1/5/10, MRR"| OUT[console]
     end
 ```
 
