@@ -2,10 +2,8 @@
 
 **🚗 Live demo:** [huggingface.co/spaces/Sabbysab/zero-shot-driving-search](https://huggingface.co/spaces/Sabbysab/zero-shot-driving-search) *(may take a minute to wake up)*
 
-Find safety-critical driving scenarios in automotive camera data by describing them in plain language — no labelling, no retraining.
-
-> *"a cyclist next to parked cars"* → the matching frames from Audi's test drives on German roads, ranked by relevance.
-
+Search for safety-critical driving scenarios in automotive camera footage using simple, natural-language descriptions. No manual labelling or model retraining required.
+"*A cyclist next to parked cars*" → Find and rank the most relevant frames from Audi test-drive footage on German roads.
 ## The problem
 
 Automotive OEMs and suppliers record enormous volumes of fleet and test-drive camera data. Validating driver-assistance and automated-driving functions (e.g. for ISO 21448 / SOTIF scenario coverage) requires finding the rare situations hidden in that data: a cyclist between parked cars, a zebra crossing with pedestrians, a tractor on a country road. Manually tagging every frame is slow and expensive, and fixed-class detectors only find what they were trained for.
