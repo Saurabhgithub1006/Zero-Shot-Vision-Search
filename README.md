@@ -142,6 +142,5 @@ Then add the secret in the Space: **Settings → Variables and secrets → New s
 
 ## Credits
 
-- Based on [Tekraj15/zero-shot-vision-search](https://github.com/Tekraj15/zero-shot-vision-search) (original Unsplash-based implementation).
 - Dataset: A2D2 © Audi AG, CC BY-ND 4.0 — Geyer et al., *A2D2: Audi Autonomous Driving Dataset*, arXiv:2004.06320.
 - Model: [google/siglip-so400m-patch14-384](https://huggingface.co/google/siglip-so400m-patch14-384).
