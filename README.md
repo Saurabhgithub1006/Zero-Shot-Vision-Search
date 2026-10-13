@@ -22,14 +22,16 @@ This project takes a different approach: zero-shot scenario search. Using SigLIP
 ## Architecture
 
 ```mermaid
-graph LR
+graph TD
     subgraph prep["Prepare data (once)"]
+        direction LR
         A["Audi driving images"] --> B["Download"]
         B --> C["Turn images into vectors"]
         B --> D[("Image storage")]
         C --> E[("Vector database")]
     end
     subgraph search["Search (every query)"]
+        direction LR
         U["User"] --> W["Web app"]
         T["Other tools"] --> API["REST API"]
         W --> S["Search engine"]
@@ -39,6 +41,7 @@ graph LR
         W -->|"show images"| D
     end
     subgraph measure["Measure quality"]
+        direction LR
         Q["Test queries"] --> S
         Q --> R["Accuracy report"]
     end
