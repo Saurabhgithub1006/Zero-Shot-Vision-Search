@@ -4,6 +4,11 @@
 
 Search for safety-critical driving scenarios in automotive camera footage using simple, natural-language descriptions. No manual labelling or model retraining required.
 "*A cyclist next to parked cars*" → Find and rank the most relevant frames from Audi test-drive footage on German roads.
+
+![Demo: typing "a pedestrian crossing the street in front of the car" returns matching frames](docs/demo.gif)
+
+<sub>Recorded from the live app. Images: A2D2 – Audi Autonomous Driving Dataset, © Audi AG, licensed under <a href="https://creativecommons.org/licenses/by-nd/4.0/">CC BY-ND 4.0</a>.</sub>
+
 ## The problem
 
 Automotive manufacturers and suppliers collect huge amounts of camera footage from test drives and real-world driving. Finding rare but safety-critical scenarios in this data is essential for validating driver-assistance and automated-driving systems, including scenario coverage for ISO 21448 (SOTIF).
@@ -57,6 +62,16 @@ graph TD
 | Download / vectors / accuracy | `scripts/download_a2d2.py`, `scripts/ingest_and_index.py`, `scripts/evaluate_model.py` |
 
  
+
+## Example results
+
+Two common ADAS validation scenarios, each returning 12 frames that all contain the target class according to A2D2's human labels (12/12):
+
+| Pedestrian crossing in front of the car (emergency-braking test case) | Construction site with traffic cones |
+|---|---|
+| ![Results for "a pedestrian crossing the street in front of the car"](docs/demo_pedestrian.png) | ![Results for "a construction site with traffic cones on the road"](docs/demo_construction.png) |
+
+<sub>Images: A2D2 © Audi AG, CC BY-ND 4.0.</sub>
 
 ## Evaluation
 

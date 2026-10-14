@@ -119,3 +119,13 @@
 **Result:** The diagram parses and renders with Mermaid 11 (checked visually).
 
 **Files:** `README.md`
+
+## CHG-20261014-01 — Demo GIF and example results in the README — 2026-10-14
+
+**What:** The README shows the app working: an animated GIF of the prompt "a pedestrian crossing the street in front of the car" being typed and the matching frames appearing, plus stills of two example scenarios.
+
+**How it works:** The frames were recorded from the live Space with a headless browser (a warm-up query first, so the recording isn't the slow first query) and assembled with Pillow into an 11-second, 960-px GIF with a shared palette (0.41 MB). The prompts were chosen by measurement: of five candidate ADAS scenarios, "pedestrian crossing in front of the car" and "construction site with traffic cones" both had 12/12 label-confirmed results, while "pedestrians at a zebra crossing" had only 2/12.
+
+**Result:** `docs/demo.gif` (0.41 MB), `docs/demo_pedestrian.png` and `docs/demo_construction.png` (about 0.6 MB each), each with an A2D2 attribution caption.
+
+**Files:** `README.md`, `docs/demo.gif`, `docs/demo_pedestrian.png`, `docs/demo_construction.png`
